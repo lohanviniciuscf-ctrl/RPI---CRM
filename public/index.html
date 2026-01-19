@@ -33,8 +33,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .lead button{margin-top:10px;margin-right:5px;font-size:12px;padding:6px 12px;border-radius:8px;}
 .btn-edit{background:#fde68a;}
 .btn-delete{background:#fecaca;}
-.progress-bar{background:#333;border-radius:12px;overflow:hidden;height:20px;margin-top:10px;margin-bottom:15px;}
+.progress-bar{background:#333;border-radius:12px;overflow:hidden;height:12px;margin-top:10px;margin-bottom:15px;}
 .progress-fill{background:#64ffda;height:100%;width:0%;transition:.5s;}
+canvas{background:var(--card);border-radius:12px;padding:10px;}
 </style>
 </head>
 <body>
@@ -92,7 +93,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   <div class="progress-bar">
     <div class="progress-fill" id="metaFill"></div>
   </div>
-  <canvas id="chart" width="300" height="150"></canvas>
+  <canvas id="chart" width="250" height="120"></canvas>
 </div>
 </div>
 
@@ -209,7 +210,7 @@ function addPedido(){if(env==="Modelle"){pedidos.push({id:Date.now(),desc:desc.v
 function editPedido(id){const p=pedidos.find(p=>p.id===id);p.desc=prompt("Descrição:",p.desc)||p.desc;p.valor=+prompt("Valor:",p.valor)||p.valor;if(env!=="Modelle"){p.custo=+prompt("Custo:",p.custo)||p.custo;p.ordinario=+prompt("Ordinários:",p.ordinario)||p.ordinario;}localStorage.setItem(env+"_"+userAtual,JSON.stringify(pedidos));renderVendas();}
 function deletePedido(id){if(confirm("Deseja excluir este pedido?")){pedidos=pedidos.filter(p=>p.id!==id);localStorage.setItem(env+"_"+userAtual,JSON.stringify(pedidos));renderVendas();}}
 
-// --- Consolidado com meta e dias ---
+// --- Consolidado com meta e gráfico clean ---
 function renderConsolidado(){
  const total=pedidos.reduce((a,b)=>a+b.valor,0);
  const custos=env==="Modelle"?0:pedidos.reduce((a,b)=>a+(b.custo+b.ordinario),0);
@@ -233,7 +234,7 @@ function renderConsolidado(){
    metaFill.title=`${perc}% da meta alcançada — R$ ${meta-total} restantes`;
  }
 
- // --- Gráfico por dias ---
+ // --- Gráfico diário minimalista ---
  const diasMap={};
  pedidos.forEach(p=>{
    const dia = new Date(p.data).toLocaleDateString();
@@ -245,7 +246,27 @@ function renderConsolidado(){
 
  if(chart) chart.destroy();
  const ctx=chartCanvas.getContext('2d');
- chart=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Valor por dia',data:valores,backgroundColor:'#64ffda'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+ chart=new Chart(ctx,{
+   type:'bar',
+   data:{
+     labels:labels,
+     datasets:[{
+       label:'Faturamento Diário',
+       data:valores,
+       backgroundColor:'#64ffda',
+       borderRadius:5, // barras mais clean
+       barThickness:15
+     }]
+   },
+   options:{
+     responsive:true,
+     plugins:{legend:{display:false}},
+     scales:{
+       y:{beginAtZero:true,ticks:{precision:0}},
+       x:{grid:{display:false},ticks:{color:'#e6f1ff'}}
+     }
+   }
+ });
 }
 </script>
 </body>
