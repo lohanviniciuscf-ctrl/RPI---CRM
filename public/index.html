@@ -33,6 +33,8 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .lead button{margin-top:10px;margin-right:5px;font-size:12px;padding:6px 12px;border-radius:8px;}
 .btn-edit{background:#fde68a;}
 .btn-delete{background:#fecaca;}
+.progress-bar{background:#333;border-radius:12px;overflow:hidden;height:20px;margin-top:10px;margin-bottom:15px;}
+.progress-fill{background:#64ffda;height:100%;width:0%;transition:.5s;}
 </style>
 </head>
 <body>
@@ -87,7 +89,10 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <button onclick="backToMain()">⬅ Voltar</button>
   </header>
   <div id="metricsConsolidado" class="metrics"></div>
-  <canvas id="chart" width="400" height="200"></canvas>
+  <div class="progress-bar">
+    <div class="progress-fill" id="metaFill"></div>
+  </div>
+  <canvas id="chart" width="300" height="150"></canvas>
 </div>
 </div>
 
@@ -107,6 +112,7 @@ const vendasDiv = document.getElementById('vendas');
 const consolidadoDiv = document.getElementById('consolidado');
 const metricsConsolidado = document.getElementById('metricsConsolidado');
 const chartCanvas = document.getElementById('chart');
+const metaFill = document.getElementById('metaFill');
 
 // --- Usuários ---
 const users={
@@ -119,21 +125,16 @@ const users={
 // --- Variáveis ---
 let env=null,userAtual=null,pedidos=[],chart=null;
 
+// --- Meta ---
+const metaVendas = {Modelle:150000, Cia:0, Thalles:0};
+
 // --- Temas ---
 function themeModelle(){document.documentElement.style.setProperty("--bg","#f6e2cf");document.documentElement.style.setProperty("--card","#e7c09b");document.documentElement.style.setProperty("--accent","#c58c5e");document.documentElement.style.setProperty("--text","#000");}
 function themeCia(){document.documentElement.style.setProperty("--bg","#064e3b");document.documentElement.style.setProperty("--card","#065f46");document.documentElement.style.setProperty("--accent","#10b981");document.documentElement.style.setProperty("--text","#d1fae5");}
 function themeThalles(){document.documentElement.style.setProperty("--bg","#0b1220");document.documentElement.style.setProperty("--card","#0f172a");document.documentElement.style.setProperty("--accent","#38bdf8");document.documentElement.style.setProperty("--text","#e0f2fe");}
 
 // --- Seleciona ambiente ---
-function selectEnv(e){
- env=e;
- envSelect.classList.add("hidden");
- loginScreen.classList.remove("hidden");
- envTitle.innerText = e==="Modelle"?"👩‍🦰 Modelle Skin":e==="Cia"?"📒 Cia & Arte":"🌬️ Thalles Climatização";
- loginError.innerText = "";
- document.getElementById('user').value='';
- document.getElementById('pass').value='';
-}
+function selectEnv(e){ env=e; envSelect.classList.add("hidden"); loginScreen.classList.remove("hidden"); envTitle.innerText = e==="Modelle"?"👩‍🦰 Modelle Skin":e==="Cia"?"📒 Cia & Arte":"🌬️ Thalles Climatização"; loginError.innerText = ""; document.getElementById('user').value=''; document.getElementById('pass').value='';}
 
 // --- Voltar ---
 function backToEnv(){loginScreen.classList.add("hidden");envSelect.classList.remove("hidden");}
@@ -183,7 +184,7 @@ function renderVendas(){
   <input id="desc" placeholder="O que é o pedido"><br><br>
   <input id="valor" type="number" placeholder="Valor do pedido"><br><br>
   <button onclick="addPedido()">Adicionar</button>
- `:` 
+ `:`
   <input id="desc" placeholder="Descrição do serviço"><br><br>
   <input id="valor" type="number" placeholder="Valor cobrado"><br><br>
   <input id="custo" type="number" placeholder="Custo do material"><br><br>
@@ -208,7 +209,7 @@ function addPedido(){if(env==="Modelle"){pedidos.push({id:Date.now(),desc:desc.v
 function editPedido(id){const p=pedidos.find(p=>p.id===id);p.desc=prompt("Descrição:",p.desc)||p.desc;p.valor=+prompt("Valor:",p.valor)||p.valor;if(env!=="Modelle"){p.custo=+prompt("Custo:",p.custo)||p.custo;p.ordinario=+prompt("Ordinários:",p.ordinario)||p.ordinario;}localStorage.setItem(env+"_"+userAtual,JSON.stringify(pedidos));renderVendas();}
 function deletePedido(id){if(confirm("Deseja excluir este pedido?")){pedidos=pedidos.filter(p=>p.id!==id);localStorage.setItem(env+"_"+userAtual,JSON.stringify(pedidos));renderVendas();}}
 
-// --- Consolidado ---
+// --- Consolidado com meta e dias ---
 function renderConsolidado(){
  const total=pedidos.reduce((a,b)=>a+b.valor,0);
  const custos=env==="Modelle"?0:pedidos.reduce((a,b)=>a+(b.custo+b.ordinario),0);
@@ -217,32 +218,34 @@ function renderConsolidado(){
   <div class="metric">Pedidos<br><strong>${pedidos.length}</strong></div>
   <div class="metric">Total<br><strong>R$ ${total.toFixed(2)}</strong></div>
   <div class="metric">Comissão 1%<br><strong>R$ ${(total*0.01).toFixed(2)}</strong></div>
- `:` 
+ `:`
   <div class="metric">Pedidos<br><strong>${pedidos.length}</strong></div>
   <div class="metric">Faturamento<br><strong>R$ ${total.toFixed(2)}</strong></div>
   <div class="metric">Custos<br><strong>R$ ${custos.toFixed(2)}</strong></div>
   <div class="metric">Lucro<br><strong>R$ ${lucro.toFixed(2)}</strong></div>
  `;
- const labels=pedidos.map(p=>p.desc);
- const valores=pedidos.map(p=>p.valor);
- const lucros=pedidos.map(p=>env==="Modelle"?0:p.valor-(p.custo+p.ordinario));
+
+ // --- Meta ---
+ if(env==="Modelle"){
+   const meta = metaVendas[env];
+   const perc = Math.min(100, Math.round((total/meta)*100));
+   metaFill.style.width=perc+'%';
+   metaFill.title=`${perc}% da meta alcançada — R$ ${meta-total} restantes`;
+ }
+
+ // --- Gráfico por dias ---
+ const diasMap={};
+ pedidos.forEach(p=>{
+   const dia = new Date(p.data).toLocaleDateString();
+   if(!diasMap[dia]) diasMap[dia]=0;
+   diasMap[dia]+=p.valor;
+ });
+ const labels=Object.keys(diasMap);
+ const valores=Object.values(diasMap);
+
  if(chart) chart.destroy();
  const ctx=chartCanvas.getContext('2d');
- chart=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Valor',data:valores,backgroundColor:'#64ffda'},{label:'Lucro',data:lucros,backgroundColor:'#38bdf8'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
-}
-
-// --- Export CSV ---
-function exportCSV(){
- let csv=env==="Modelle"?"Descrição,Valor,Data\n":"Descrição,Valor,Custo,Ordinários,Lucro,Data\n";
- pedidos.forEach(p=>{
-   if(env==="Modelle") csv+=`${p.desc},${p.valor},${new Date(p.data).toLocaleDateString()}\n`;
-   else csv+=`${p.desc},${p.valor},${p.custo},${p.ordinario},${p.valor-(p.custo+p.ordinario)},${new Date(p.data).toLocaleDateString()}\n`;
- });
- const blob=new Blob([csv],{type:"text/csv"});
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download=env+"_consolidado.csv";
- a.click();
+ chart=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Valor por dia',data:valores,backgroundColor:'#64ffda'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
 }
 </script>
 </body>
