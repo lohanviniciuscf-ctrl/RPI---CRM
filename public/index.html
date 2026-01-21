@@ -39,78 +39,75 @@ canvas{background:var(--card);border-radius:12px;padding:10px;}
 
 /* =========================
    EFEITOS PREMIUM 3D + CLEAN
-   (APENAS ADIÇÃO VISUAL)
 ========================= */
 
-/* Glassmorphism */
 .box, .metric, .lead, canvas {
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
-  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-/* Profundidade 3D */
+/* Sombra premium */
 .box, .metric, .lead {
-  transform-style: preserve-3d;
-  perspective: 1000px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  transition: transform .4s ease, box-shadow .4s ease;
 }
 
-/* Hover 3D suave */
-.metric:hover, .lead:hover, .box:hover {
-  transform: translateY(-6px) scale(1.01) rotateX(3deg) rotateY(-2deg);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+/* Hover com profundidade */
+.metric:hover,
+.lead:hover,
+.box:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 30px 90px rgba(0,0,0,.65);
 }
 
-/* Glow no hover */
-.metric:hover strong,
-button:hover {
-  text-shadow: 0 0 12px var(--accent);
+/* Glow discreto */
+.metric:hover strong {
+  text-shadow: 0 0 10px var(--accent);
 }
 
-/* Botões com efeito neon clean */
+/* Botões com brilho animado */
 button {
   position: relative;
   overflow: hidden;
 }
 button::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
+  content: "";
+  position: absolute;
+  inset: 0;
   background: linear-gradient(120deg, transparent, rgba(255,255,255,.35), transparent);
-  transform: translateX(-100%);
-  transition:.6s;
+  transform: translateX(-120%);
+  transition: .6s;
 }
 button:hover::after {
-  transform: translateX(100%);
+  transform: translateX(120%);
+}
+
+/* Progress bar premium */
+.progress-fill {
+  box-shadow: 0 0 14px var(--accent);
 }
 
 /* Animação suave de entrada */
 .box, .metric, .lead, canvas {
-  animation: fadeInSoft .6s ease both;
+  animation: softFade .6s ease both;
 }
-@keyframes fadeInSoft {
+@keyframes softFade {
   from {opacity:0; transform: translateY(10px);}
   to {opacity:1; transform: translateY(0);}
-}
-
-/* Barra de progresso com glow */
-.progress-fill {
-  box-shadow: 0 0 12px var(--accent);
 }
 
 /* Scroll clean */
 ::-webkit-scrollbar {
   width: 8px;
 }
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
+}
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(var(--accent), transparent);
-  border-radius: 10px;
-}
+
 </style>
 </head>
 <body>
